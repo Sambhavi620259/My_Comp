@@ -127,7 +127,7 @@ public class OtpServiceImpl implements OtpService {
 
         return generate(
                 user,
-                "RESET"
+                "RESET_PASSWORD"
         );
     }
 
@@ -143,7 +143,7 @@ public class OtpServiceImpl implements OtpService {
         validate(
                 user,
                 otp,
-                "RESET"
+                "RESET_PASSWORD"
         );
     }
 
@@ -306,10 +306,27 @@ public class OtpServiceImpl implements OtpService {
 
         try {
 
-            emailService.sendVerificationOtpEmail(
-                    email,
-                    otp
-            );
+            if ("LOGIN".equals(purpose)) {
+
+                emailService.sendLoginOtpEmail(
+                        email,
+                        otp
+                );
+
+            } else if ("RESET_PASSWORD".equals(purpose)) {
+
+                emailService.sendResetOtpEmail(
+                        email,
+                        otp
+                );
+
+            } else {
+
+                emailService.sendVerificationOtpEmail(
+                        email,
+                        otp
+                );
+            }
 
             log.info(
                     "📧 OTP sent to email {}",

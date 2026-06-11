@@ -349,6 +349,37 @@ public class NotificationService {
                 );
     }
 
+    public void deleteNotification(
+            Long notificationId,
+            String email
+    ) {
+
+        String normalizedEmail =
+                normalizeEmail(email);
+
+        NotificationEntity notification =
+                notificationRepository
+                        .findByIdAndUser_EmailIgnoreCase(
+                                notificationId,
+                                normalizedEmail
+                        )
+                        .orElseThrow(() ->
+
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND,
+                                        "Notification not found"
+                                )
+                        );
+
+        notificationRepository.delete(notification);
+
+        log.info(
+                "Notification {} deleted for {}",
+                notificationId,
+                normalizedEmail
+        );
+    }
+
     // =====================================================
     // NORMALIZE EMAIL
     // =====================================================

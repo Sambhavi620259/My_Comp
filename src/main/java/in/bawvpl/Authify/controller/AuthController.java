@@ -4,10 +4,7 @@ import in.bawvpl.Authify.entity.KycEntity;
 import in.bawvpl.Authify.entity.UserEntity;
 import in.bawvpl.Authify.entity.UserStatus;
 
-import in.bawvpl.Authify.io.ProfileRequest;
-import in.bawvpl.Authify.io.RefreshTokenRequest;
-import in.bawvpl.Authify.io.RegisterRequest;
-import in.bawvpl.Authify.io.VerifyOtpRequest;
+import in.bawvpl.Authify.io.*;
 
 import in.bawvpl.Authify.repository.KycRepository;
 import in.bawvpl.Authify.repository.UserRepository;
@@ -21,6 +18,9 @@ import jakarta.validation.Valid;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import in.bawvpl.Authify.io.ForgotPasswordRequest;
+import in.bawvpl.Authify.io.ResetPasswordRequest;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -713,6 +713,8 @@ public class AuthController {
                     );
 
 
+
+
             // =====================================================
             // ROLE
             // =====================================================
@@ -1145,6 +1147,117 @@ public class AuthController {
     }
 
     // =====================================================
+    // FORGOT PASSWORD
+    // =====================================================
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(
+            @Valid
+            @RequestBody ForgotPasswordRequest request
+    ) {
+
+        try {
+
+            UserEntity user =
+                    userRepository
+                            .findByEmailIgnoreCase(
+                                    request.getEmail()
+                                            .trim()
+                                            .toLowerCase()
+                            )
+                            .orElseThrow(() ->
+
+                                    new ResponseStatusException(
+                                            HttpStatus.NOT_FOUND,
+                                            "User not found"
+                                    )
+                            );
+
+            otpService.generateResetOtp(user);
+
+            return ResponseEntity.ok(
+                    Map.of(
+                            "success", true,
+                            "message", "Reset OTP sent successfully"
+                    )
+            );
+
+        } catch (ResponseStatusException e) {
+
+            return ResponseEntity
+                    .status(e.getStatusCode())
+                    .body(
+                            Map.of(
+                                    "success", false,
+                                    "message", e.getReason()
+                            )
+                    );
+        }
+    }
+
+    // =====================================================
+    // RESET PASSWORD
+    // =====================================================
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(
+            @Valid
+            @RequestBody ResetPasswordRequest request
+    ) {
+
+        try {
+
+            UserEntity user =
+                    userRepository
+                            .findByEmailIgnoreCase(
+                                    request.getEmail()
+                                            .trim()
+                                            .toLowerCase()
+                            )
+                            .orElseThrow(() ->
+
+                                    new ResponseStatusException(
+                                            HttpStatus.NOT_FOUND,
+                                            "User not found"
+                                    )
+                            );
+
+            otpService.verifyResetOtp(
+                    user,
+                    request.getOtp()
+            );
+
+            user.setPassword(
+                    passwordEncoder.encode(
+                            request.getNewPassword()
+                    )
+            );
+
+            user.incrementTokenVersion();
+            user.setRefreshToken(null);
+            userRepository.save(user);
+
+            return ResponseEntity.ok(
+                    Map.of(
+                            "success", true,
+                            "message", "Password reset successful"
+                    )
+            );
+
+        } catch (ResponseStatusException e) {
+
+            return ResponseEntity
+                    .status(e.getStatusCode())
+                    .body(
+                            Map.of(
+                                    "success", false,
+                                    "message", e.getReason()
+                            )
+                    );
+        }
+    }
+
+    // =====================================================
     // DTO
     // =====================================================
 
@@ -1155,4 +1268,6 @@ public class AuthController {
 
         private String password;
     }
+
+
 }

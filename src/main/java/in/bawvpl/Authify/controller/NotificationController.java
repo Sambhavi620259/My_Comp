@@ -231,6 +231,16 @@ public class NotificationController {
         );
     }
 
+
+    @PutMapping("/{id}/read")
+    public ResponseEntity<ApiResponse<Object>> markAsReadPut(
+            @PathVariable Long id,
+            Authentication auth
+    ) {
+        return markAsRead(id, auth);
+    }
+
+
     // =====================================================
     // MARK ALL AS READ
     // =====================================================
@@ -257,6 +267,53 @@ public class NotificationController {
                         .status(200)
 
                         .message("All notifications marked as read successfully")
+
+                        .data(null)
+
+                        .build()
+        );
+    }
+
+    @PutMapping("/read-all")
+    public ResponseEntity<ApiResponse<Object>> markAllAsReadPut(
+            Authentication auth
+    ) {
+        return markAllAsRead(auth);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Object>> deleteNotification(
+
+            @PathVariable Long id,
+
+            Authentication auth
+    ) {
+
+        if (
+                id == null ||
+                        id <= 0
+        ) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Invalid notification id"
+            );
+        }
+
+        notificationService.deleteNotification(
+                id,
+                getEmail(auth)
+        );
+
+        return ResponseEntity.ok(
+
+                ApiResponse.<Object>builder()
+
+                        .success(true)
+
+                        .status(200)
+
+                        .message("Notification deleted successfully")
 
                         .data(null)
 
